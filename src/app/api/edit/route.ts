@@ -72,9 +72,17 @@ export async function POST(req: NextRequest) {
           prompt: prompt,
           referenceImages: [
             {
-              inlineData: {
-                mimeType,
-                data: base64Image
+              referenceImage: {
+                imageBytes: base64Image,
+                mimeType: mimeType
+              },
+              referenceId: 1,
+              toReferenceImageAPI() {
+                return {
+                  referenceType: 'REFERENCE_TYPE_RAW',
+                  referenceImage: this.referenceImage,
+                  referenceId: this.referenceId,
+                };
               }
             }
           ],
