@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       
       // Call editImage using latest Imagen capabilities with foreground mask and controlled editing
       const response = await (ai.models as any).editImage({
-        model: 'imagen-3.0-capability-001',
+        model: 'nano-banana-3.1-pro',
         prompt: prompt,
         referenceImages: [
           {
