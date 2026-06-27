@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
           throw new Error('GEMINI_API_KEY is not defined');
         }
 
-        const ai = new GoogleGenAI({ apiKey, vertexai: true });
+        const ai = new GoogleGenAI({ apiKey, vertexai: true, location: 'us-central1' });
         
         console.log(`Calling Google Gen AI image editing for image: ${originalFilename}`);
         

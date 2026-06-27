@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'GEMINI_API_KEY is not configured' }, { status: 500 });
     }
 
-    const ai = new GoogleGenAI({ apiKey, vertexai: true });
+    const ai = new GoogleGenAI({ apiKey, vertexai: true, location: 'us-central1' });
 
     const instruction = `You are a professional jewelry photography expert. Look at the attached image and write a highly detailed, 1-2 sentence description of the subject, background, lighting, and materials (e.g. metal type, gemstone shape, and background setting). Use this description to fill in the [Scene Description] placeholder.
     
