@@ -30,21 +30,52 @@ export async function POST(req: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey, vertexai: true });
 
-    const instruction = `You are a professional jewelry retouching assistant. Your job is to output a clean, direct editing instruction for an image editing model (Imagen) to remove scratches and dust from this ring.
+    const instruction = `You are a professional jewelry photography expert. Look at the attached image and write a highly detailed, 1-2 sentence description of the subject, background, lighting, and materials (e.g. metal type, gemstone shape, and background setting). Use this description to fill in the [Scene Description] placeholder.
     
-    Look at the image and identify:
-    - The metal type and color (e.g. yellow gold, white gold, rose gold, silver, platinum).
-    - The gemstone type, shape and cut (e.g. marquise diamond, emerald-cut diamond, round diamond, oval diamond, or "no gemstone" if there is none).
-    - Whether a hand/skin is present.
+    CRITICAL DECISION RULE:
+    Inspect the image to see if a hand, finger, or skin is present.
+    - If a hand/finger/skin IS present in the image: Output the prompt using the "HAND TEMPLATE" below.
+    - If NO hand/finger/skin is present in the image (e.g. it is just the ring on a table, box, flat surface, or standalone studio shot): Omit skin/finger/nail/hair guidelines entirely and output using the "STANDALONE TEMPLATE" below.
     
-    Output the instruction prompt exactly following this template, replacing the bracketed items:
+    Return ONLY the final filled prompt. Do not include any introductory or concluding text, or markdown codeblocks (like \`\`\`). Output should start directly with the filled scene description.
     
-    "Remove all scratches, micro-dust, scuffs, and blemishes from the [metal_type] metal surfaces of the ring. Polish the metal to make it completely smooth and clean. Do not change the original shape of the ring, the [metal_type] color, the [gemstone_type], or the background. Keep everything else exactly identical to the original image."
+    HAND TEMPLATE:
+    "[Scene Description]
+    Imperative Instruction for Advanced Post-Processing: Flawless Execution.
+    Comprehensive Imperfection Removal: Perform an advanced, localized, and context-aware purge of all micro-imperfections. This requires the absolute and complete removal of all surface scratches (including deep scratches, fine micro-scratches, and lines on the top curve of the metal band), scuffs, fine dust particles, fine hairs and peach fuzz on the fingers and knuckles, skin blemishes, small fibers, and environmental noise.
     
-    If a hand/skin is present, append this sentence to the prompt:
-    "Preserve the natural skin texture and fingernails exactly as they are."
+    Strict Preservation Mandate (Non-Destructive Retouching): All core elements of the scene must remain absolutely identical and unaltered in their original form.
     
-    Return ONLY the final filled instruction text. Do not include any introductory or concluding remarks, or markdown formatting (like \`\`\`). Start the response directly with "Remove all..."`;
+    Ring: The metal finish (the exact gold/silver color, tone, and highly reflective glossy shine which must look exactly like the original, preserving the original texture, sheen, and polish without adding any artificial glow or extra highlights. No flat, matte, or fake glowing spots should be introduced), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
+    
+    Hand and Skin: The natural skin tone, knuckle lines, fingerprint patterns, primary skin texture, hand pose, and fingernail appearance (including any nail polish color).
+    
+    Clothing & Objects: The texture and form of the ribbed fabric (sweater, etc.) and background objects.
+    
+    Lighting and Reflections: The specific direction, softness, and color temperature of the studio lighting. Critically, all complex, glossy reflections and natural highlights must be preserved exactly as they appear in the original, maintaining the same intensity and shape without introducing any extra glowing effects or artificial lighting.
+    
+    Final Output Goal: The resulting image must look exactly like the original in composition and feel, but in a state of impossible, pristine cleanliness, featuring flawless, highly polished, and naturally shining metal surfaces with no matte spots or artificial glowing filters. All scratches (especially on the top band) and dust are completely removed.
+    
+    AI Preservation Policy Active
+    This prompt instructs the AI to preserve the metal color, reflections, gemstone details, and backgrounds. Image sizing and resolution will remain exactly identical."
+    
+    STANDALONE TEMPLATE:
+    "[Scene Description]
+    Imperative Instruction for Advanced Post-Processing: Flawless Execution.
+    Comprehensive Imperfection Removal: Perform an advanced, localized, and context-aware purge of all micro-imperfections. This requires the absolute and complete removal of all surface scratches (including deep scratches, fine micro-scratches, and lines on the top curve of the metal band), scuffs, fine dust particles, small fibers, and environmental noise.
+    
+    Strict Preservation Mandate (Non-Destructive Retouching): All core elements of the scene must remain absolutely identical and unaltered in their original form.
+    
+    Ring: The metal finish (the exact gold/silver color, tone, and highly reflective glossy shine which must look exactly like the original, preserving the original texture, sheen, and polish without adding any artificial glow or extra highlights. No flat, matte, or fake glowing spots should be introduced), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
+    
+    Clothing & Objects: The texture and form of the background surface, props, boxes, or fabrics.
+    
+    Lighting and Reflections: The specific direction, softness, and color temperature of the studio lighting. Critically, all complex, glossy reflections and natural highlights must be preserved exactly as they appear in the original, maintaining the same intensity and shape without introducing any extra glowing effects or artificial lighting.
+    
+    Final Output Goal: The resulting image must look exactly like the original in composition and feel, but in a state of impossible, pristine cleanliness, featuring flawless, highly polished, and naturally shining metal surfaces with no matte spots or artificial glowing filters. All scratches (especially on the top band) and dust are completely removed.
+    
+    AI Preservation Policy Active
+    This prompt instructs the AI to preserve the metal color, reflections, gemstone details, and backgrounds. Image sizing and resolution will remain exactly identical."`;
 
     console.log(`Analyzing image ID: ${id} with Gemini...`);
 

@@ -104,6 +104,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'upload' | 'history' | 'watermark'>('upload');
   const [history, setHistory] = useState<ImageRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<ImageRecord | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState<number | null>(null);
   
   const [isUploading, setIsUploading] = useState(false);
   const [isRetouching, setIsRetouching] = useState(false);
@@ -120,18 +121,68 @@ export default function Dashboard() {
       const res = await fetch('/api/history');
       const data = await res.json();
       if (data.records) {
-        setHistory(data.records);
+        // Merge metadata with currently cached records (retains loaded base64 paths)
+        setHistory(prev => {
+          return data.records.map((newRec: ImageRecord) => {
+            const cached = prev.find(r => r.id === newRec.id);
+            if (cached && cached.original_path) {
+              return { ...newRec, original_path: cached.original_path, edited_path: cached.edited_path };
+            }
+            return newRec;
+          });
+        });
+
         // Refresh selected record if open
         if (selectedRecord) {
           const updated = data.records.find((r: ImageRecord) => r.id === selectedRecord.id);
           if (updated) {
-            setSelectedRecord(updated);
+            setSelectedRecord(prev => {
+              if (prev && prev.id === updated.id) {
+                return { ...updated, original_path: prev.original_path, edited_path: prev.edited_path };
+              }
+              return updated;
+            });
             setEditablePrompt(updated.prompt);
           }
         }
       }
     } catch (err) {
       console.error('Failed to load history:', err);
+    }
+  };
+
+  const handleSelectRecord = async (recordOrId: ImageRecord | number) => {
+    let record: ImageRecord | undefined;
+    if (typeof recordOrId === 'number') {
+      record = history.find(r => r.id === recordOrId);
+    } else {
+      record = recordOrId;
+    }
+    
+    if (!record) return;
+
+    // Immediately display basic record info and switch tabs
+    setSelectedRecord(record);
+    setEditablePrompt(record.prompt);
+    setActiveTab('history');
+
+    // Fetch full base64 detail if not already loaded/cached
+    if (!record.original_path) {
+      setLoadingDetails(record.id);
+      try {
+        const res = await fetch(`/api/history?id=${record.id}`);
+        const data = await res.json();
+        if (data.record) {
+          setSelectedRecord(data.record);
+          setEditablePrompt(data.record.prompt);
+          // Cache the details in the history list state
+          setHistory(prev => prev.map(r => r.id === record.id ? data.record : r));
+        }
+      } catch (err) {
+        console.error('Failed to load record details:', err);
+      } finally {
+        setLoadingDetails(null);
+      }
     }
   };
 
@@ -217,7 +268,6 @@ export default function Dashboard() {
     setIsUploading(false);
     await fetchHistory();
   };
-
   // Trigger Inpainting Image Retouching
   const handleRetouch = async () => {
     if (!selectedRecord) return;
@@ -231,6 +281,8 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.record) {
         setSelectedRecord(data.record);
+        // Cache the full edited record in the history list state
+        setHistory(prev => prev.map(r => r.id === selectedRecord.id ? data.record : r));
         await fetchHistory();
       } else {
         throw new Error(data.error || 'Failed to edit image');
@@ -242,51 +294,8 @@ export default function Dashboard() {
     }
   };
 
-  const handleUploadCustomEdited = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!selectedRecord || !e.target.files || !e.target.files[0]) return;
-    const file = e.target.files[0];
-    
-    setIsRetouching(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64Data = reader.result as string;
-        try {
-          const res = await fetch('/api/edit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: selectedRecord.id,
-              customEditedImage: base64Data
-            })
-          });
-          const data = await res.json();
-          if (data.record) {
-            setSelectedRecord(data.record);
-            await fetchHistory();
-          } else {
-            throw new Error(data.error || 'Failed to save custom edited image');
-          }
-        } catch (err) {
-          alert('Failed to save image: ' + (err as Error).message);
-        } finally {
-          setIsRetouching(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      alert('Error reading file: ' + (err as Error).message);
-      setIsRetouching(false);
-    }
-  };
-
   const selectRecordAndOpen = (id: number) => {
-    const record = history.find(r => r.id === id);
-    if (record) {
-      setSelectedRecord(record);
-      setEditablePrompt(record.prompt);
-      setActiveTab('history');
-    }
+    handleSelectRecord(id);
   };
 
   const filteredHistory = history.filter(item => 
@@ -626,20 +635,23 @@ export default function Dashboard() {
                       <div 
                         key={item.id}
                         className={`history-item ${selectedRecord?.id === item.id ? 'active' : ''}`}
-                        onClick={() => {
-                          setSelectedRecord(item);
-                          setEditablePrompt(item.prompt);
-                        }}
+                        onClick={() => handleSelectRecord(item)}
                       >
                         <div style={{
                           width: '42px', height: '42px', borderRadius: '6px',
                           backgroundColor: '#f1f5f9', overflow: 'hidden', flexShrink: 0
                         }}>
-                          <img 
-                            src={item.original_path} 
-                            alt="preview" 
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                          />
+                          {item.original_path ? (
+                            <img 
+                              src={item.original_path} 
+                              alt="preview" 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                            />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e2e8f0', color: 'var(--color-text-muted)' }}>
+                              <ImageIcon size={18} />
+                            </div>
+                          )}
                         </div>
                         <div style={{ flexGrow: 1, minWidth: 0 }}>
                           <div style={{
@@ -715,26 +727,6 @@ export default function Dashboard() {
                           )}
                         </button>
                       )}
-
-                      {/* Custom Upload Button */}
-                      {(selectedRecord.status === 'analyzed' || selectedRecord.status === 'completed') && (
-                        <>
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={handleUploadCustomEdited} 
-                            style={{ display: 'none' }} 
-                            id="custom-edited-upload"
-                          />
-                          <label 
-                            htmlFor="custom-edited-upload" 
-                            className="btn btn-outline btn-sm"
-                            style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                          >
-                            <UploadCloud size={14} /> Upload Custom After
-                          </label>
-                        </>
-                      )}
                     </div>
                   </div>
 
@@ -744,19 +736,25 @@ export default function Dashboard() {
                     {/* Visual Comparison slider */}
                     <div>
                       <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: 'var(--color-text-muted)' }}>IMAGE PREVIEW & COMPARISON</h4>
-                      
-                      {selectedRecord.status === 'completed' && selectedRecord.edited_path ? (
+                      {loadingDetails === selectedRecord.id ? (
+                        <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--color-border)', backgroundColor: '#f1f5f9', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                          <Loader2 size={36} className="animate-spin" style={{ color: 'var(--color-primary)' }} />
+                          <span style={{ fontSize: '13px', fontWeight: '600' }}>Loading image...</span>
+                        </div>
+                      ) : selectedRecord.status === 'completed' && selectedRecord.edited_path ? (
                         <ImageSlider 
                           before={selectedRecord.original_path} 
                           after={selectedRecord.edited_path} 
                         />
                       ) : (
                         <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--color-border)', backgroundColor: '#f1f5f9' }}>
-                          <img 
-                            src={selectedRecord.original_path} 
-                            alt="Original preview" 
-                            style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
-                          />
+                          {selectedRecord.original_path && (
+                            <img 
+                              src={selectedRecord.original_path} 
+                              alt="Original preview" 
+                              style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                            />
+                          )}
                           {isRetouching && (
                             <div style={{
                               position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,

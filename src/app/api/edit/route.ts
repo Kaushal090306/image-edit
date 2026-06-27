@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { query } from '@/lib/db';
 import { GoogleGenAI } from '@google/genai';
 
@@ -31,109 +29,72 @@ export async function POST(req: NextRequest) {
     let finalEditedBase64Url = '';
     let success = false;
 
-    // Pathway A: Photoshop Demo Matching
-    // Check if a pre-cleaned file with the same base ID exists in the "after" directory
+    // Pathway B: Vertex AI / Imagen API Image Editing (Always run the AI model directly)
     try {
-      const demoAfterDir = path.join(process.cwd(), 'after');
-      const match = originalFilename.match(/_MG_\d+/i);
+      const apiKey = process.env.VERTEX_API_KEY || process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('No API key configured for Vertex AI');
+      }
+
+      const ai = new GoogleGenAI({ apiKey, vertexai: true });
       
-      if (match) {
-        const baseId = match[0].toUpperCase();
-        console.log(`Searching for Photoshop match with Base ID: ${baseId}`);
-        
-        const files = await fs.readdir(demoAfterDir);
-        const matchingFile = files.find(f => f.toUpperCase().includes(baseId));
-        
-        if (matchingFile) {
-          const demoAfterFilePath = path.join(demoAfterDir, matchingFile);
-          const fileBuffer = await fs.readFile(demoAfterFilePath);
-          const base64Data = fileBuffer.toString('base64');
-          
-          // Determine correct MIME type from base64 content headers
-          const isPng = base64Data.startsWith('iVBORw0KGgo');
-          const responseMime = isPng ? 'image/png' : 'image/jpeg';
-          finalEditedBase64Url = `data:${responseMime};base64,${base64Data}`;
-          
-          console.log(`Demo Match Found: loaded Photoshop file ${matchingFile} for original ${originalFilename}`);
-          success = true;
-        } else {
-          console.log(`No demo match found in after/ folder for base ID: ${baseId}`);
-        }
-      } else {
-        console.log(`Could not extract Base ID from filename: ${originalFilename}`);
-      }
-    } catch (err: any) {
-      console.log(`Error in Pathway A matching: ${err.message}`);
-    }
-
-    // Pathway B: Vertex AI / Imagen API Image Editing
-    if (!success) {
-      try {
-        const apiKey = process.env.VERTEX_API_KEY || process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-          throw new Error('No API key configured for Vertex AI');
-        }
-
-        const ai = new GoogleGenAI({ apiKey, vertexai: true });
-        
-        console.log(`Calling Google Gen AI image editing for image: ${originalFilename}`);
-        
-        // Call editImage using latest Imagen capabilities
-        const response = await (ai.models as any).editImage({
-          model: 'imagen-3.0-capability-001',
-          prompt: prompt,
-          referenceImages: [
-            {
-              referenceImage: {
-                imageBytes: base64Image,
-                mimeType: mimeType
-              },
-              referenceId: 1,
-              toReferenceImageAPI() {
-                return {
-                  referenceType: 'REFERENCE_TYPE_RAW',
-                  referenceImage: this.referenceImage,
-                  referenceId: this.referenceId,
-                };
-              }
+      console.log(`Calling Google Gen AI image editing for image: ${originalFilename}`);
+      
+      // Call editImage using latest Imagen capabilities with foreground mask and controlled editing
+      const response = await (ai.models as any).editImage({
+        model: 'imagen-3.0-capability-001',
+        prompt: prompt,
+        referenceImages: [
+          {
+            referenceImage: {
+              imageBytes: base64Image,
+              mimeType: mimeType
             },
-            {
-              referenceId: 2,
-              toReferenceImageAPI() {
-                return {
-                  referenceType: 'REFERENCE_TYPE_MASK',
-                  referenceId: this.referenceId,
-                  maskImageConfig: {
-                    maskMode: 'MASK_MODE_FOREGROUND',
-                    maskDilation: 0.05
-                  }
-                };
-              }
+            referenceId: 1,
+            toReferenceImageAPI() {
+              return {
+                referenceType: 'REFERENCE_TYPE_RAW',
+                referenceImage: this.referenceImage,
+                referenceId: this.referenceId,
+              };
             }
-          ],
-          config: {
-            numberOfImages: 1,
-            outputMimeType: 'image/jpeg',
-            editMode: 'EDIT_MODE_CONTROLLED_EDITING'
+          },
+          {
+            referenceId: 2,
+            toReferenceImageAPI() {
+              return {
+                referenceType: 'REFERENCE_TYPE_MASK',
+                referenceId: this.referenceId,
+                maskImageConfig: {
+                  maskMode: 'MASK_MODE_FOREGROUND',
+                  maskDilation: 0.05
+                }
+              };
+            }
           }
-        });
-
-        if (response.generatedImages && response.generatedImages[0]) {
-          const generatedImg = response.generatedImages[0];
-          finalEditedBase64Url = `data:image/jpeg;base64,${generatedImg.image.imageBytes}`;
-          success = true;
-          console.log(`AI Image Clean-up succeeded for: ${originalFilename}`);
-        } else {
-          throw new Error('Empty response from Image Editing model');
+        ],
+        config: {
+          numberOfImages: 1,
+          outputMimeType: 'image/jpeg',
+          editMode: 'EDIT_MODE_CONTROLLED_EDITING'
         }
-      } catch (aiError: any) {
-        console.error(`AI Editing failed: ${aiError.message}. Falling back to clean copy...`);
-        
-        // Pathway C: Clean Fallback
-        // Copy the original base64 directly to the edited field
-        finalEditedBase64Url = originalUrl;
+      });
+
+      if (response.generatedImages && response.generatedImages[0]) {
+        const generatedImg = response.generatedImages[0];
+        finalEditedBase64Url = `data:image/jpeg;base64,${generatedImg.image.imageBytes}`;
         success = true;
+        console.log(`AI Image Clean-up succeeded for: ${originalFilename}`);
+      } else {
+        throw new Error('Empty response from Image Editing model');
       }
+    } catch (aiError: any) {
+      console.error(`AI Editing failed: ${aiError.message}. Falling back to clean copy...`);
+      
+      // Pathway C: Clean Fallback
+      // Copy the original base64 directly to the edited field
+      finalEditedBase64Url = originalUrl;
+      success = true;
     }
 
     if (success) {
