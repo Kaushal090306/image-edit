@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
           throw new Error('GEMINI_API_KEY is not defined');
         }
 
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI({ apiKey, vertexai: true });
         
         // Read file as base64
         const imageBuffer = await fs.readFile(absoluteBeforePath);
