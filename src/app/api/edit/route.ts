@@ -78,11 +78,25 @@ export async function POST(req: NextRequest) {
                   referenceId: this.referenceId,
                 };
               }
+            },
+            {
+              referenceId: 2,
+              toReferenceImageAPI() {
+                return {
+                  referenceType: 'REFERENCE_TYPE_MASK',
+                  referenceId: this.referenceId,
+                  maskImageConfig: {
+                    maskMode: 'MASK_MODE_FOREGROUND',
+                    maskDilation: 0.05
+                  }
+                };
+              }
             }
           ],
           config: {
             numberOfImages: 1,
-            outputMimeType: 'image/jpeg'
+            outputMimeType: 'image/jpeg',
+            editMode: 'EDIT_MODE_CONTROLLED_EDITING'
           }
         });
 
