@@ -31,7 +31,7 @@ interface ImageRecord {
 interface ProcessingItem {
   name: string;
   file: File;
-  status: 'queued' | 'uploading' | 'scanning' | 'ready' | 'failed';
+  status: 'queued' | 'uploading' | 'scanning' | 'ready' | 'retouching' | 'completed' | 'failed';
   id?: number;
 }
 
@@ -159,7 +159,7 @@ export default function Dashboard() {
     }
   };
 
-  // Perform Bulk Upload AND Automatic Prompt Scanning
+  // Perform Bulk Upload AND Automatic Prompt Scanning & Retouching
   const startUploadAndAnalyze = async () => {
     if (uploadQueue.length === 0) return;
     setIsUploading(true);
@@ -202,9 +202,23 @@ export default function Dashboard() {
         });
         
         if (!analyzeRes.ok) throw new Error('Gemini prompt generation failed');
-        
-        // Update UI: ready
-        setProcessingList(prev => prev.map((p, idx) => idx === i ? { ...p, status: 'ready' } : p));
+        const analyzeData = await analyzeRes.json();
+        const analyzedRecord = analyzeData.record as ImageRecord;
+
+        // Update UI: retouching...
+        setProcessingList(prev => prev.map((p, idx) => idx === i ? { ...p, status: 'retouching' } : p));
+
+        // Call image generation edit API automatically!
+        const editRes = await fetch('/api/edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: record.id, prompt: analyzedRecord.prompt })
+        });
+
+        if (!editRes.ok) throw new Error('AI retouching failed');
+
+        // Update UI: completed
+        setProcessingList(prev => prev.map((p, idx) => idx === i ? { ...p, status: 'completed' } : p));
       } catch (err) {
         console.error('Processing error:', err);
         setProcessingList(prev => prev.map((p, idx) => idx === i ? { ...p, status: 'failed' } : p));
@@ -525,25 +539,35 @@ export default function Dashboard() {
                               </span>
                             )}
                             {item.status === 'ready' && (
+                              <span style={{ color: 'var(--color-warning)', fontWeight: '500' }}>
+                                ✓ Prompt generated! Preparing retouching...
+                              </span>
+                            )}
+                            {item.status === 'retouching' && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-primary)' }}>
+                                <Loader2 size={10} className="animate-spin" /> Running AI Image Retouching...
+                              </span>
+                            )}
+                            {item.status === 'completed' && (
                               <span style={{ color: 'var(--color-success)', fontWeight: '500' }}>
-                                ✓ Prompt generated successfully! Ready to retouch.
+                                ✓ Retouching completed successfully! Ready.
                               </span>
                             )}
                             {item.status === 'failed' && (
                               <span style={{ color: 'var(--color-danger)' }}>
-                                ✗ Processing failed. Please retry.
+                                ✗ Processing failed. Please check billing or try again.
                               </span>
                             )}
                           </div>
                         </div>
                       </div>
 
-                      {item.status === 'ready' && item.id && (
+                      {item.id && (item.status === 'ready' || item.status === 'completed') && (
                         <button 
                           onClick={() => selectRecordAndOpen(item.id!)}
                           className="btn btn-secondary btn-sm"
                         >
-                          View & Edit Prompt
+                          {item.status === 'completed' ? 'View & Download' : 'View Prompt'}
                         </button>
                       )}
                     </div>
