@@ -205,20 +205,8 @@ export default function Dashboard() {
         const analyzeData = await analyzeRes.json();
         const analyzedRecord = analyzeData.record as ImageRecord;
 
-        // Update UI: retouching...
-        setProcessingList(prev => prev.map((p, idx) => idx === i ? { ...p, status: 'retouching' } : p));
-
-        // Call image generation edit API automatically!
-        const editRes = await fetch('/api/edit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: record.id, prompt: analyzedRecord.prompt })
-        });
-
-        if (!editRes.ok) throw new Error('AI retouching failed');
-
-        // Update UI: completed
-        setProcessingList(prev => prev.map((p, idx) => idx === i ? { ...p, status: 'completed' } : p));
+        // Update UI: ready
+        setProcessingList(prev => prev.map((p, idx) => idx === i ? { ...p, status: 'ready' } : p));
       } catch (err) {
         console.error('Processing error:', err);
         setProcessingList(prev => prev.map((p, idx) => idx === i ? { ...p, status: 'failed' } : p));

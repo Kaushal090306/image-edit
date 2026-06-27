@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     
     Strict Preservation Mandate (Non-Destructive Retouching): All core elements of the scene must remain absolutely identical and unaltered in their original form.
     
-    Ring: The metal finish (the exact gold color, whether polished or brushed texture), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
+    Ring: The metal finish (the exact gold/silver color, tone, and polish, whether yellow, rose, or white gold, which must remain strictly uniform and identical across all views/angles of this ring to prevent any visible color or polish mismatch), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
     
     Hand and Skin: The natural skin tone, knuckle lines, fingerprint patterns, primary skin texture, hand pose, and fingernail appearance (including any nail polish color).
     
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     
     Strict Preservation Mandate (Non-Destructive Retouching): All core elements of the scene must remain absolutely identical and unaltered in their original form.
     
-    Ring: The metal finish (the exact gold color, whether polished or brushed texture), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
+    Ring: The metal finish (the exact gold/silver color, tone, and polish, whether yellow, rose, or white gold, which must remain strictly uniform and identical across all views/angles of this ring to prevent any visible color or polish mismatch), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
     
     Clothing & Objects: The texture and form of the background surface, props, boxes, or fabrics.
     
