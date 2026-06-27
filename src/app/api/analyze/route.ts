@@ -48,15 +48,15 @@ export async function POST(req: NextRequest) {
     
     Strict Preservation Mandate (Non-Destructive Retouching): All core elements of the scene must remain absolutely identical and unaltered in their original form.
     
-    Ring: The metal finish (the exact gold/silver color, tone, and polish, whether yellow, rose, or white gold, which must remain strictly uniform and identical across all views/angles of this ring to prevent any visible color or polish mismatch), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
+    Ring: The metal finish (the exact gold/silver color, tone, and highly reflective, glossy, polished, and glowing shine with natural highlights, which must remain strictly uniform, polished, and identical across all views/angles of this ring to prevent any flat or matte spots), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
     
     Hand and Skin: The natural skin tone, knuckle lines, fingerprint patterns, primary skin texture, hand pose, and fingernail appearance (including any nail polish color).
     
     Clothing & Objects: The texture and form of the ribbed fabric (sweater, etc.) and background objects.
     
-    Lighting and Reflections: The specific direction, softness, and color temperature of the studio lighting. Critically, all complex and unique reflections on the metal and stone surfaces must be preserved with 100% fidelity, just with the micro-noise removed.
+    Lighting and Reflections: The specific direction, softness, and color temperature of the studio lighting. Critically, all complex, glossy reflections and glowing highlights on the metal and stone surfaces must be preserved with 100% fidelity, ensuring a bright, shining appearance without converting glossy parts to a flat or matte finish.
     
-    Final Output Goal: The resulting image must look exactly like the original in composition and feel, but in a state of impossible, pristine cleanliness, featuring flawless metal surfaces and a model-perfect hand. All noise, dust, and surface damage are removed."
+    Final Output Goal: The resulting image must look exactly like the original in composition and feel, but in a state of impossible, pristine cleanliness, featuring flawless, highly polished, glowing, and shining metal surfaces with no matte spots. All noise, dust, and surface damage are removed."
     
     STANDALONE TEMPLATE:
     "[Scene Description]
@@ -65,13 +65,13 @@ export async function POST(req: NextRequest) {
     
     Strict Preservation Mandate (Non-Destructive Retouching): All core elements of the scene must remain absolutely identical and unaltered in their original form.
     
-    Ring: The metal finish (the exact gold/silver color, tone, and polish, whether yellow, rose, or white gold, which must remain strictly uniform and identical across all views/angles of this ring to prevent any visible color or polish mismatch), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
+    Ring: The metal finish (the exact gold/silver color, tone, and highly reflective, glossy, polished, and glowing shine with natural highlights, which must remain strictly uniform, polished, and identical across all views/angles of this ring to prevent any flat or matte spots), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
     
     Clothing & Objects: The texture and form of the background surface, props, boxes, or fabrics.
     
-    Lighting and Reflections: The specific direction, softness, and color temperature of the studio lighting. Critically, all complex and unique reflections on the metal and stone surfaces must be preserved with 100% fidelity, just with the micro-noise removed.
+    Lighting and Reflections: The specific direction, softness, and color temperature of the studio lighting. Critically, all complex, glossy reflections and glowing highlights on the metal and stone surfaces must be preserved with 100% fidelity, ensuring a bright, shining appearance without converting glossy parts to a flat or matte finish.
     
-    Final Output Goal: The resulting image must look exactly like the original in composition and feel, but in a state of impossible, pristine cleanliness, featuring flawless metal surfaces. All noise, dust, and surface damage are removed."`;
+    Final Output Goal: The resulting image must look exactly like the original in composition and feel, but in a state of impossible, pristine cleanliness, featuring flawless, highly polished, glowing, and shining metal surfaces with no matte spots. All noise, dust, and surface damage are removed."`;
 
     console.log(`Analyzing image ID: ${id} with Gemini...`);
 
