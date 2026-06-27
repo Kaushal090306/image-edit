@@ -19,30 +19,30 @@ export async function POST(req: NextRequest) {
 
     const record = dbResult.rows[0];
     const originalFilename = record.filename; // e.g. _MG_0914.JPG.jpeg
-    const storedFilename = path.basename(record.original_path); // e.g. 1718239812__MG_0914.JPG.jpeg
+    const originalUrl = record.original_path; // dataURL containing base64
 
-    const absoluteBeforePath = path.join(process.cwd(), 'public', record.original_path);
-    const relativeAfterPath = `/uploads/after/${storedFilename}`;
-    const absoluteAfterPath = path.join(process.cwd(), 'public', relativeAfterPath);
+    // Extract base64 and mimeType from original url
+    const mimeType = originalUrl.split(';base64,')[0].split('data:').pop() || 'image/jpeg';
+    const base64Image = originalUrl.split(';base64,').pop() || '';
 
     // Update the database with any prompt edits
     await query('UPDATE image_history SET prompt = $1 WHERE id = $2', [prompt, id]);
 
+    let finalEditedBase64Url = '';
     let success = false;
 
     // Pathway A: Photoshop Demo Matching
-    // Check if the exact original file exists in the hand-cleaned "after" directory
+    // Check if the exact original file exists in the bundled read-only "after" directory
     try {
       const demoAfterDir = path.join(process.cwd(), 'after');
       const demoAfterFilePath = path.join(demoAfterDir, originalFilename);
       
       await fs.access(demoAfterFilePath);
+      const fileBuffer = await fs.readFile(demoAfterFilePath);
+      const base64Data = fileBuffer.toString('base64');
+      finalEditedBase64Url = `data:image/jpeg;base64,${base64Data}`;
       
-      // Ensure destination directory exists
-      await fs.mkdir(path.dirname(absoluteAfterPath), { recursive: true });
-      await fs.copyFile(demoAfterFilePath, absoluteAfterPath);
-      
-      console.log(`Demo Match Found: copied Photoshop version of ${originalFilename}`);
+      console.log(`Demo Match Found: loaded Photoshop base64 of ${originalFilename}`);
       success = true;
     } catch (err) {
       console.log(`No demo match found in after/ folder for: ${originalFilename}`);
@@ -58,13 +58,7 @@ export async function POST(req: NextRequest) {
 
         const ai = new GoogleGenAI({ apiKey, vertexai: true });
         
-        // Read file as base64
-        const imageBuffer = await fs.readFile(absoluteBeforePath);
-        const base64Image = imageBuffer.toString('base64');
-        const extension = path.extname(record.original_path).toLowerCase();
-        const mimeType = extension === '.png' ? 'image/png' : 'image/jpeg';
-
-        console.log(`Calling Google Gen AI image editing for image: ${storedFilename}`);
+        console.log(`Calling Google Gen AI image editing for image: ${originalFilename}`);
         
         // Call editImage using latest Imagen capabilities
         const response = await (ai.models as any).editImage({
@@ -94,12 +88,9 @@ export async function POST(req: NextRequest) {
 
         if (response.generatedImages && response.generatedImages[0]) {
           const generatedImg = response.generatedImages[0];
-          const outputBuffer = Buffer.from(generatedImg.image.imageBytes, 'base64');
-          
-          await fs.mkdir(path.dirname(absoluteAfterPath), { recursive: true });
-          await fs.writeFile(absoluteAfterPath, outputBuffer);
+          finalEditedBase64Url = `data:image/jpeg;base64,${generatedImg.image.imageBytes}`;
           success = true;
-          console.log(`AI Image Clean-up succeeded for: ${storedFilename}`);
+          console.log(`AI Image Clean-up succeeded for: ${originalFilename}`);
         } else {
           throw new Error('Empty response from Image Editing model');
         }
@@ -107,21 +98,20 @@ export async function POST(req: NextRequest) {
         console.error(`AI Editing failed: ${aiError.message}. Falling back to clean copy...`);
         
         // Pathway C: Clean Fallback
-        // Copy the original file to "after" as a safe fallback
-        await fs.mkdir(path.dirname(absoluteAfterPath), { recursive: true });
-        await fs.copyFile(absoluteBeforePath, absoluteAfterPath);
+        // Copy the original base64 directly to the edited field
+        finalEditedBase64Url = originalUrl;
         success = true;
       }
     }
 
     if (success) {
-      // Mark as completed in the database
+      // Mark as completed in the database and save the base64 URL
       const dbUpdate = await query(
         `UPDATE image_history 
          SET edited_path = $1, status = $2 
          WHERE id = $3 
          RETURNING *`,
-        [relativeAfterPath, 'completed', id]
+        [finalEditedBase64Url, 'completed', id]
       );
       
       return NextResponse.json({ record: dbUpdate.rows[0] });

@@ -19,13 +19,10 @@ export async function POST(req: NextRequest) {
 
     const record = dbResult.rows[0];
 
-    // Read the image file from local path
-    const absoluteFilePath = path.join(process.cwd(), 'public', record.original_path);
-    const imageBuffer = await fs.readFile(absoluteFilePath);
-    const base64Image = imageBuffer.toString('base64');
-    
-    const extension = path.extname(record.original_path).toLowerCase();
-    const mimeType = extension === '.png' ? 'image/png' : 'image/jpeg';
+    // Extract base64 and mimeType directly from the database string (data URL)
+    const originalUrl = record.original_path;
+    const mimeType = originalUrl.split(';base64,')[0].split('data:').pop() || 'image/jpeg';
+    const base64Image = originalUrl.split(';base64,').pop() || '';
 
     // Initialize Google Gen AI
     const apiKey = process.env.GEMINI_API_KEY;
