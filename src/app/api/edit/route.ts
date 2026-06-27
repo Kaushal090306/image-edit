@@ -51,12 +51,12 @@ export async function POST(req: NextRequest) {
     // Pathway B: Vertex AI / Imagen API Image Editing
     if (!success) {
       try {
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.VERTEX_API_KEY || process.env.GEMINI_API_KEY;
         if (!apiKey) {
-          throw new Error('GEMINI_API_KEY is not defined');
+          throw new Error('No API key configured for Vertex AI');
         }
 
-        const ai = new GoogleGenAI({ apiKey, vertexai: true, location: 'us-central1' });
+        const ai = new GoogleGenAI({ apiKey, vertexai: true });
         
         console.log(`Calling Google Gen AI image editing for image: ${originalFilename}`);
         
