@@ -44,34 +44,34 @@ export async function POST(req: NextRequest) {
     HAND TEMPLATE:
     "[Scene Description]
     Imperative Instruction for Advanced Post-Processing: Flawless Execution.
-    Comprehensive Imperfection Removal: Perform an advanced, localized, and context-aware purge of all micro-imperfections. This includes all trace of fine dust particles, microscopic surface scratches and scuffs on the gold metal, all fine hairs and peach fuzz on the fingers and knuckles, skin blemishes, small fibers, and all environmental noise.
+    Comprehensive Imperfection Removal: Perform an advanced, localized, and context-aware purge of all micro-imperfections. This requires the absolute and complete removal of all surface scratches (including deep scratches, fine micro-scratches, and lines on the top curve of the metal band), scuffs, fine dust particles, fine hairs and peach fuzz on the fingers and knuckles, skin blemishes, small fibers, and environmental noise.
     
     Strict Preservation Mandate (Non-Destructive Retouching): All core elements of the scene must remain absolutely identical and unaltered in their original form.
     
-    Ring: The metal finish (the exact gold/silver color, tone, and highly reflective, glossy, polished, and glowing shine with natural highlights, which must remain strictly uniform, polished, and identical across all views/angles of this ring to prevent any flat or matte spots), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
+    Ring: The metal finish (the exact gold/silver color, tone, and highly reflective glossy shine which must look exactly like the original, preserving the original texture, sheen, and polish without adding any artificial glow or extra highlights. No flat, matte, or fake glowing spots should be introduced), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
     
     Hand and Skin: The natural skin tone, knuckle lines, fingerprint patterns, primary skin texture, hand pose, and fingernail appearance (including any nail polish color).
     
     Clothing & Objects: The texture and form of the ribbed fabric (sweater, etc.) and background objects.
     
-    Lighting and Reflections: The specific direction, softness, and color temperature of the studio lighting. Critically, all complex, glossy reflections and glowing highlights on the metal and stone surfaces must be preserved with 100% fidelity, ensuring a bright, shining appearance without converting glossy parts to a flat or matte finish.
+    Lighting and Reflections: The specific direction, softness, and color temperature of the studio lighting. Critically, all complex, glossy reflections and natural highlights must be preserved exactly as they appear in the original, maintaining the same intensity and shape without introducing any extra glowing effects or artificial lighting.
     
-    Final Output Goal: The resulting image must look exactly like the original in composition and feel, but in a state of impossible, pristine cleanliness, featuring flawless, highly polished, glowing, and shining metal surfaces with no matte spots. All noise, dust, and surface damage are removed."
+    Final Output Goal: The resulting image must look exactly like the original in composition and feel, but in a state of impossible, pristine cleanliness, featuring flawless, highly polished, and naturally shining metal surfaces with no matte spots or artificial glowing filters. All scratches (especially on the top band) and dust are completely removed."
     
     STANDALONE TEMPLATE:
     "[Scene Description]
     Imperative Instruction for Advanced Post-Processing: Flawless Execution.
-    Comprehensive Imperfection Removal: Perform an advanced, localized, and context-aware purge of all micro-imperfections. This includes all trace of fine dust particles, microscopic surface scratches and scuffs on the gold metal, small fibers, and all environmental noise.
+    Comprehensive Imperfection Removal: Perform an advanced, localized, and context-aware purge of all micro-imperfections. This requires the absolute and complete removal of all surface scratches (including deep scratches, fine micro-scratches, and lines on the top curve of the metal band), scuffs, fine dust particles, small fibers, and environmental noise.
     
     Strict Preservation Mandate (Non-Destructive Retouching): All core elements of the scene must remain absolutely identical and unaltered in their original form.
     
-    Ring: The metal finish (the exact gold/silver color, tone, and highly reflective, glossy, polished, and glowing shine with natural highlights, which must remain strictly uniform, polished, and identical across all views/angles of this ring to prevent any flat or matte spots), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
+    Ring: The metal finish (the exact gold/silver color, tone, and highly reflective glossy shine which must look exactly like the original, preserving the original texture, sheen, and polish without adding any artificial glow or extra highlights. No flat, matte, or fake glowing spots should be introduced), the complex facet cut, clarity, and brilliancy of the diamond, and the ring’s geometry, size, and shape.
     
     Clothing & Objects: The texture and form of the background surface, props, boxes, or fabrics.
     
-    Lighting and Reflections: The specific direction, softness, and color temperature of the studio lighting. Critically, all complex, glossy reflections and glowing highlights on the metal and stone surfaces must be preserved with 100% fidelity, ensuring a bright, shining appearance without converting glossy parts to a flat or matte finish.
+    Lighting and Reflections: The specific direction, softness, and color temperature of the studio lighting. Critically, all complex, glossy reflections and natural highlights must be preserved exactly as they appear in the original, maintaining the same intensity and shape without introducing any extra glowing effects or artificial lighting.
     
-    Final Output Goal: The resulting image must look exactly like the original in composition and feel, but in a state of impossible, pristine cleanliness, featuring flawless, highly polished, glowing, and shining metal surfaces with no matte spots. All noise, dust, and surface damage are removed."`;
+    Final Output Goal: The resulting image must look exactly like the original in composition and feel, but in a state of impossible, pristine cleanliness, featuring flawless, highly polished, and naturally shining metal surfaces with no matte spots or artificial glowing filters. All scratches (especially on the top band) and dust are completely removed."`;
 
     console.log(`Analyzing image ID: ${id} with Gemini...`);
 
