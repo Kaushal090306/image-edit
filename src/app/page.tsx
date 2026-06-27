@@ -242,6 +242,44 @@ export default function Dashboard() {
     }
   };
 
+  const handleUploadCustomEdited = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedRecord || !e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+    
+    setIsRetouching(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Data = reader.result as string;
+        try {
+          const res = await fetch('/api/edit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: selectedRecord.id,
+              customEditedImage: base64Data
+            })
+          });
+          const data = await res.json();
+          if (data.record) {
+            setSelectedRecord(data.record);
+            await fetchHistory();
+          } else {
+            throw new Error(data.error || 'Failed to save custom edited image');
+          }
+        } catch (err) {
+          alert('Failed to save image: ' + (err as Error).message);
+        } finally {
+          setIsRetouching(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      alert('Error reading file: ' + (err as Error).message);
+      setIsRetouching(false);
+    }
+  };
+
   const selectRecordAndOpen = (id: number) => {
     const record = history.find(r => r.id === id);
     if (record) {
@@ -676,6 +714,26 @@ export default function Dashboard() {
                             </>
                           )}
                         </button>
+                      )}
+
+                      {/* Custom Upload Button */}
+                      {(selectedRecord.status === 'analyzed' || selectedRecord.status === 'completed') && (
+                        <>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handleUploadCustomEdited} 
+                            style={{ display: 'none' }} 
+                            id="custom-edited-upload"
+                          />
+                          <label 
+                            htmlFor="custom-edited-upload" 
+                            className="btn btn-outline btn-sm"
+                            style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            <UploadCloud size={14} /> Upload Custom After
+                          </label>
+                        </>
                       )}
                     </div>
                   </div>

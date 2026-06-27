@@ -6,9 +6,27 @@ import { GoogleGenAI } from '@google/genai';
 
 export async function POST(req: NextRequest) {
   try {
-    const { id, prompt } = await req.json();
-    if (!id || !prompt) {
-      return NextResponse.json({ error: 'Missing ID or prompt' }, { status: 400 });
+    const { id, prompt, customEditedImage } = await req.json();
+    if (!id) {
+      return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+    }
+
+    if (customEditedImage) {
+      const updateResult = await query(
+        `UPDATE image_history 
+         SET edited_path = $1, status = $2 
+         WHERE id = $3 
+         RETURNING *`,
+        [customEditedImage, 'completed', id]
+      );
+      if (updateResult.rows.length === 0) {
+        return NextResponse.json({ error: 'Image not found in database' }, { status: 404 });
+      }
+      return NextResponse.json({ record: updateResult.rows[0], success: true });
+    }
+
+    if (!prompt) {
+      return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
     }
 
     // Retrieve database record
