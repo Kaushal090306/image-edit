@@ -4,7 +4,7 @@ import { GoogleGenAI } from '@google/genai';
 
 export async function POST(req: NextRequest) {
   try {
-    const { id, prompt } = await req.json();
+    const { id, prompt, mode = 'retouch' } = await req.json();
     if (!id || !prompt) {
       return NextResponse.json({ error: 'Missing ID or prompt' }, { status: 400 });
     }
@@ -38,47 +38,60 @@ export async function POST(req: NextRequest) {
 
       const ai = new GoogleGenAI({ apiKey, vertexai: true });
       
-      console.log(`Calling Google Gen AI image editing for image: ${originalFilename}`);
+      console.log(`Calling Google Gen AI image editing for image: ${originalFilename} (Mode: ${mode})`);
       
-      // Call editImage using latest Imagen capabilities with foreground mask and controlled editing
+      // Build reference images array dynamically
+      const referenceImages: any[] = [
+        {
+          referenceImage: {
+            imageBytes: base64Image,
+            mimeType: mimeType
+          },
+          referenceId: 1,
+          toReferenceImageAPI() {
+            return {
+              referenceType: 'REFERENCE_TYPE_RAW',
+              referenceImage: this.referenceImage,
+              referenceId: this.referenceId,
+            };
+          }
+        }
+      ];
+
+      // Only add mask if we are in retouch (inpainting) mode
+      if (mode === 'retouch') {
+        referenceImages.push({
+          referenceId: 2,
+          toReferenceImageAPI() {
+            return {
+              referenceType: 'REFERENCE_TYPE_MASK',
+              referenceId: this.referenceId,
+              maskImageConfig: {
+                maskMode: 'MASK_MODE_FOREGROUND',
+                maskDilation: 0.05
+              }
+            };
+          }
+        });
+      }
+
+      // Configure edit config parameters based on mode
+      const editConfig: any = {
+        numberOfImages: 1,
+        outputMimeType: 'image/jpeg',
+        editMode: mode === 'retouch' ? 'EDIT_MODE_CONTROLLED_EDITING' : 'EDIT_MODE_DEFAULT'
+      };
+
+      if (mode === 'retouch') {
+        editConfig.guidanceScale = 2.0;
+      }
+
+      // Call editImage using latest Imagen capabilities
       const response = await (ai.models as any).editImage({
         model: 'imagen-3.0-capability-001',
         prompt: prompt,
-        referenceImages: [
-          {
-            referenceImage: {
-              imageBytes: base64Image,
-              mimeType: mimeType
-            },
-            referenceId: 1,
-            toReferenceImageAPI() {
-              return {
-                referenceType: 'REFERENCE_TYPE_RAW',
-                referenceImage: this.referenceImage,
-                referenceId: this.referenceId,
-              };
-            }
-          },
-          {
-            referenceId: 2,
-            toReferenceImageAPI() {
-              return {
-                referenceType: 'REFERENCE_TYPE_MASK',
-                referenceId: this.referenceId,
-                maskImageConfig: {
-                  maskMode: 'MASK_MODE_FOREGROUND',
-                  maskDilation: 0.05
-                }
-              };
-            }
-          }
-        ],
-        config: {
-          numberOfImages: 1,
-          outputMimeType: 'image/jpeg',
-          editMode: 'EDIT_MODE_CONTROLLED_EDITING',
-          guidanceScale: 2.0
-        }
+        referenceImages,
+        config: editConfig
       });
 
       if (response.generatedImages && response.generatedImages[0]) {

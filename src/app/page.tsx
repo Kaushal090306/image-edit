@@ -105,6 +105,7 @@ export default function Dashboard() {
   const [history, setHistory] = useState<ImageRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<ImageRecord | null>(null);
   const [loadingDetails, setLoadingDetails] = useState<number | null>(null);
+  const [retouchMode, setRetouchMode] = useState<'retouch' | 'img2img'>('retouch');
   
   const [isUploading, setIsUploading] = useState(false);
   const [isRetouching, setIsRetouching] = useState(false);
@@ -276,7 +277,7 @@ export default function Dashboard() {
       const res = await fetch('/api/edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: selectedRecord.id, prompt: editablePrompt })
+        body: JSON.stringify({ id: selectedRecord.id, prompt: editablePrompt, mode: retouchMode })
       });
       const data = await res.json();
       if (data.record) {
@@ -696,7 +697,26 @@ export default function Dashboard() {
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Mode:</span>
+                        <select 
+                          value={retouchMode} 
+                          onChange={(e) => setRetouchMode(e.target.value as 'retouch' | 'img2img')}
+                          style={{ 
+                            fontSize: '12px', 
+                            padding: '4px 24px 4px 8px', 
+                            borderRadius: '4px',
+                            border: '1px solid var(--color-border)',
+                            backgroundColor: '#FFFFFF',
+                            cursor: 'pointer',
+                            color: 'var(--color-text)'
+                          }}
+                        >
+                          <option value="retouch">Clean & Retouch (Inpaint)</option>
+                          <option value="img2img">Guided Regenerate (Img2Img)</option>
+                        </select>
+                      </div>
                       {/* Download Button */}
                       {selectedRecord.status === 'completed' && selectedRecord.edited_path && (
                         <a 
