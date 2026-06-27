@@ -6,27 +6,9 @@ import { GoogleGenAI } from '@google/genai';
 
 export async function POST(req: NextRequest) {
   try {
-    const { id, prompt, customEditedImage } = await req.json();
-    if (!id) {
-      return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
-    }
-
-    if (customEditedImage) {
-      const updateResult = await query(
-        `UPDATE image_history 
-         SET edited_path = $1, status = $2 
-         WHERE id = $3 
-         RETURNING *`,
-        [customEditedImage, 'completed', id]
-      );
-      if (updateResult.rows.length === 0) {
-        return NextResponse.json({ error: 'Image not found in database' }, { status: 404 });
-      }
-      return NextResponse.json({ record: updateResult.rows[0], success: true });
-    }
-
-    if (!prompt) {
-      return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
+    const { id, prompt } = await req.json();
+    if (!id || !prompt) {
+      return NextResponse.json({ error: 'Missing ID or prompt' }, { status: 400 });
     }
 
     // Retrieve database record
@@ -50,20 +32,38 @@ export async function POST(req: NextRequest) {
     let success = false;
 
     // Pathway A: Photoshop Demo Matching
-    // Check if the exact original file exists in the bundled read-only "after" directory
+    // Check if a pre-cleaned file with the same base ID exists in the "after" directory
     try {
       const demoAfterDir = path.join(process.cwd(), 'after');
-      const demoAfterFilePath = path.join(demoAfterDir, originalFilename);
+      const match = originalFilename.match(/_MG_\d+/i);
       
-      await fs.access(demoAfterFilePath);
-      const fileBuffer = await fs.readFile(demoAfterFilePath);
-      const base64Data = fileBuffer.toString('base64');
-      finalEditedBase64Url = `data:image/jpeg;base64,${base64Data}`;
-      
-      console.log(`Demo Match Found: loaded Photoshop base64 of ${originalFilename}`);
-      success = true;
-    } catch (err) {
-      console.log(`No demo match found in after/ folder for: ${originalFilename}`);
+      if (match) {
+        const baseId = match[0].toUpperCase();
+        console.log(`Searching for Photoshop match with Base ID: ${baseId}`);
+        
+        const files = await fs.readdir(demoAfterDir);
+        const matchingFile = files.find(f => f.toUpperCase().includes(baseId));
+        
+        if (matchingFile) {
+          const demoAfterFilePath = path.join(demoAfterDir, matchingFile);
+          const fileBuffer = await fs.readFile(demoAfterFilePath);
+          const base64Data = fileBuffer.toString('base64');
+          
+          // Determine correct MIME type from base64 content headers
+          const isPng = base64Data.startsWith('iVBORw0KGgo');
+          const responseMime = isPng ? 'image/png' : 'image/jpeg';
+          finalEditedBase64Url = `data:${responseMime};base64,${base64Data}`;
+          
+          console.log(`Demo Match Found: loaded Photoshop file ${matchingFile} for original ${originalFilename}`);
+          success = true;
+        } else {
+          console.log(`No demo match found in after/ folder for base ID: ${baseId}`);
+        }
+      } else {
+        console.log(`Could not extract Base ID from filename: ${originalFilename}`);
+      }
+    } catch (err: any) {
+      console.log(`Error in Pathway A matching: ${err.message}`);
     }
 
     // Pathway B: Vertex AI / Imagen API Image Editing
